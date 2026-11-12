@@ -30,11 +30,13 @@ h2{margin:0 0 2px}.meta{color:var(--mu);margin:0 0 14px;font-size:14px}
 .ctl{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
 .ctl button{font:inherit;padding:8px 16px;border-radius:8px;border:1px solid var(--ln);background:#fff;cursor:pointer;color:var(--tx)}
 .msg{padding:30px 0;color:var(--mu);text-align:center}
+.upd{margin:0 0 12px;font-size:13px;color:var(--mu)}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div id="app">
+  <p class="upd" id="upd" hidden></p>
   <div id="daftar">
     <div class="pills" id="pills"></div>
     <div class="grid" id="grid"></div>
@@ -142,6 +144,12 @@ document.addEventListener("keydown", function (e) {
 
 api("").then(function (d) {
   S.albums = d.albums;
+  if (d.diperbarui) {
+    var t = new Date(d.diperbarui);
+    var bl = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+    $("upd").textContent = "Diperbarui per " + bl[t.getMonth()] + " " + t.getFullYear();
+    $("upd").hidden = false;
+  }
   $("msg").hidden = d.albums.length > 0;
   if (!d.albums.length) $("msg").textContent = "Belum ada album.";
   pills(); grid();
