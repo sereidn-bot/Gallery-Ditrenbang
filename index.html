@@ -106,13 +106,19 @@ $("grid").onclick = function (e) {
   $("dmsg").hidden = false; $("dmsg").textContent = "Memuat foto...";
   $("daftar").hidden = true; $("detail").hidden = false;
   window.scrollTo(0, 0); $("app").scrollIntoView();
-  api("album=" + a.id).then(function (d) {
+  function isiFoto(d) {
     S.foto = d.foto; $("dmsg").hidden = true;
     $("photos").innerHTML = d.foto.map(function (f, k) {
       return '<button class="tile" data-k="' + k + '"><img src="' + th(f.id, 500) + '" alt="' + esc(f.judul) + '">' +
         '<div class="cp">' + esc(f.judul) + "</div></button>";
     }).join("");
-  }).catch(function () { $("dmsg").textContent = "Foto gagal dimuat. Coba muat ulang halaman."; });
+  }
+  var cf = baca("gal_foto_" + a.id);
+  if (cf) isiFoto(cf);
+  api("album=" + a.id).then(function (d) {
+    simpan("gal_foto_" + a.id, d);
+    if (S.album === a && JSON.stringify(d) !== JSON.stringify(cf)) isiFoto(d);
+  }).catch(function () { if (!cf) $("dmsg").textContent = "Foto gagal dimuat. Coba muat ulang halaman."; });
 };
 $("back").onclick = function () {
   $("detail").hidden = true; $("daftar").hidden = false; $("app").scrollIntoView();
@@ -142,7 +148,9 @@ document.addEventListener("keydown", function (e) {
   if (e.key === "Escape") $("tp").onclick();
 });
 
-api("").then(function (d) {
+function simpan(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function baca(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+function tampilAlbum(d) {
   S.albums = d.albums;
   if (d.diperbarui) {
     var t = new Date(d.diperbarui);
@@ -153,7 +161,13 @@ api("").then(function (d) {
   $("msg").hidden = d.albums.length > 0;
   if (!d.albums.length) $("msg").textContent = "Belum ada album.";
   pills(); grid();
-}).catch(function () { $("msg").textContent = "Album gagal dimuat. Coba muat ulang halaman."; });
+}
+var cacheAlbum = baca("gal_album");
+if (cacheAlbum && cacheAlbum.albums) tampilAlbum(cacheAlbum); else cacheAlbum = null;
+api("").then(function (d) {
+  simpan("gal_album", d);
+  if (JSON.stringify(d) !== JSON.stringify(cacheAlbum)) tampilAlbum(d);
+}).catch(function () { if (!cacheAlbum) $("msg").textContent = "Album gagal dimuat. Coba muat ulang halaman."; });
 
 // Kirim tinggi halaman ke Joomla supaya iframe menyesuaikan
 function kirim() {
