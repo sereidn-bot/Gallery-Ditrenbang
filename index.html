@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gallery Ditrenbang</title>
+<style>
+:root{--tx:#1b2a1b;--mu:#5d6b5d;--g:#0a5c0a;--ln:#d9e0d6;--acc:#e0b04a;--ph:#e7ece4}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+#app{max-width:1100px;margin:0 auto;padding:16px}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.pills button{font:inherit;padding:7px 16px;border-radius:99px;border:1px solid var(--ln);background:#fff;color:var(--tx);cursor:pointer}
+.pills button.on{background:var(--g);border-color:var(--g);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.card{background:#fff;border:1px solid var(--ln);border-radius:10px;overflow:hidden;cursor:pointer;text-align:left;padding:0;font:inherit;color:inherit}
+.card .ph{aspect-ratio:4/3;background:var(--ph)}
+.card img{width:100%;height:100%;object-fit:cover;display:block}
+.card .t{padding:12px 14px}.card h3{margin:0 0 2px;font-size:16px}.card small{color:var(--mu)}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.back{background:none;border:0;color:var(--g);font:inherit;cursor:pointer;padding:0;margin-bottom:10px}
+h2{margin:0 0 2px}.meta{color:var(--mu);margin:0 0 14px;font-size:14px}
+.photos{columns:3 200px;column-gap:10px}
+.tile{display:block;width:100%;margin:0 0 10px;padding:0;border:1px solid var(--ln);border-radius:8px;overflow:hidden;background:#fff;cursor:zoom-in;break-inside:avoid;text-align:left;font:inherit;color:inherit}
+.tile img{display:block;width:100%;height:auto;min-height:80px;background:var(--ph)}
+.cp{padding:7px 9px;font-size:13px;line-height:1.35}
+#viewer{text-align:center}
+#viewer img{max-width:100%;max-height:640px;object-fit:contain;background:var(--ph);border-radius:8px}
+#vcap{margin:8px 0;font-weight:600}
+.ctl{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+.ctl button{font:inherit;padding:8px 16px;border-radius:8px;border:1px solid var(--ln);background:#fff;cursor:pointer;color:var(--tx)}
+.msg{padding:30px 0;color:var(--mu);text-align:center}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="daftar">
+    <div class="pills" id="pills"></div>
+    <div class="grid" id="grid"></div>
+    <div class="msg" id="msg">Memuat album...</div>
+  </div>
+  <div id="detail" hidden>
+    <button class="back" id="back">Kembali ke semua album</button>
+    <h2 id="dt"></h2>
+    <p class="meta" id="dm"></p>
+    <div class="msg" id="dmsg" hidden>Memuat foto...</div>
+    <div class="photos" id="photos"></div>
+    <div id="viewer" hidden>
+      <img id="vimg" alt="">
+      <div id="vcap"></div>
+      <div class="ctl">
+        <button id="pv">Sebelumnya</button><span id="ct"></span><button id="nx">Berikutnya</button><button id="tp">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// GANTI dengan URL web app Apps Script (berakhiran /exec)
+var API = "https://script.google.com/macros/s/AKfycbzaoVNzZEXPdv5Hp6Nr5TysYyPu4h9AOcp_92WwTwTCmYloK_7PhQUe6KshrW5c5jLS/exec";
+
+var S = { albums: [], tahun: "Semua", album: null, foto: [], idx: 0 };
+function $(id) { return document.getElementById(id); }
+function th(id, w) { return "https://drive.google.com/thumbnail?id=" + id + "&sz=w" + w; }
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+function api(q) {
+  return fetch(API + "?" + q).then(function (r) { return r.json(); }).then(function (d) {
+    if (d.error) throw new Error(d.error);
+    return d;
+  });
+}
+
+function pills() {
+  var ys = ["Semua"];
+  S.albums.forEach(function (a) { if (ys.indexOf(a.tahun) < 0) ys.push(a.tahun); });
+  $("pills").innerHTML = ys.map(function (y) {
+    return '<button data-y="' + y + '" class="' + (y === S.tahun ? "on" : "") + '">' + y + "</button>";
+  }).join("");
+}
+function grid() {
+  var h = "";
+  S.albums.forEach(function (a, i) {
+    if (S.tahun !== "Semua" && a.tahun !== S.tahun) return;
+    h += '<button class="card" data-i="' + i + '"><div class="ph"><img loading="lazy" src="' + th(a.sampul, 600) + '" alt=""></div>' +
+      '<div class="t"><h3>' + esc(a.judul) + "</h3><small>" + esc(a.tampil) + ", " + a.jumlah + " foto</small></div></button>";
+  });
+  $("grid").innerHTML = h;
+}
+
+$("pills").onclick = function (e) {
+  var y = e.target.getAttribute("data-y");
+  if (y) { S.tahun = y; pills(); grid(); }
+};
+$("grid").onclick = function (e) {
+  var b = e.target.closest(".card");
+  if (!b) return;
+  var a = S.albums[b.getAttribute("data-i")];
+  S.album = a;
+  $("dt").textContent = a.judul;
+  $("dm").textContent = a.tampil + ", " + a.jumlah + " foto";
+  $("photos").innerHTML = "";
+  $("viewer").hidden = true;
+  $("dmsg").hidden = false; $("dmsg").textContent = "Memuat foto...";
+  $("daftar").hidden = true; $("detail").hidden = false;
+  window.scrollTo(0, 0); $("app").scrollIntoView();
+  api("album=" + a.id).then(function (d) {
+    S.foto = d.foto; $("dmsg").hidden = true;
+    $("photos").innerHTML = d.foto.map(function (f, k) {
+      return '<button class="tile" data-k="' + k + '"><img src="' + th(f.id, 500) + '" alt="' + esc(f.judul) + '">' +
+        '<div class="cp">' + esc(f.judul) + "</div></button>";
+    }).join("");
+  }).catch(function () { $("dmsg").textContent = "Foto gagal dimuat. Coba muat ulang halaman."; });
+};
+$("back").onclick = function () {
+  $("detail").hidden = true; $("daftar").hidden = false; $("app").scrollIntoView();
+};
+
+function lihat(k) {
+  S.idx = (k + S.foto.length) % S.foto.length;
+  var f = S.foto[S.idx];
+  $("vimg").src = th(f.id, 1600); $("vimg").alt = f.judul;
+  $("vcap").textContent = f.judul;
+  $("ct").textContent = (S.idx + 1) + " / " + S.foto.length;
+}
+$("photos").onclick = function (e) {
+  var b = e.target.closest(".tile");
+  if (!b) return;
+  $("photos").hidden = true; $("viewer").hidden = false;
+  lihat(+b.getAttribute("data-k"));
+  $("viewer").scrollIntoView();
+};
+$("pv").onclick = function () { lihat(S.idx - 1); };
+$("nx").onclick = function () { lihat(S.idx + 1); };
+$("tp").onclick = function () { $("viewer").hidden = true; $("photos").hidden = false; $("dt").scrollIntoView(); };
+document.addEventListener("keydown", function (e) {
+  if ($("viewer").hidden) return;
+  if (e.key === "ArrowLeft") lihat(S.idx - 1);
+  if (e.key === "ArrowRight") lihat(S.idx + 1);
+  if (e.key === "Escape") $("tp").onclick();
+});
+
+api("").then(function (d) {
+  S.albums = d.albums;
+  $("msg").hidden = d.albums.length > 0;
+  if (!d.albums.length) $("msg").textContent = "Belum ada album.";
+  pills(); grid();
+}).catch(function () { $("msg").textContent = "Album gagal dimuat. Coba muat ulang halaman."; });
+
+// Kirim tinggi halaman ke Joomla supaya iframe menyesuaikan
+function kirim() {
+  var h = Math.ceil(document.body.getBoundingClientRect().height);
+  parent.postMessage({ type: "resize", height: h }, "*");
+}
+if (window.ResizeObserver) new ResizeObserver(kirim).observe(document.body);
+window.addEventListener("load", kirim);
+</script>
+</body>
+</html>
