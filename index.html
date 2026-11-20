@@ -17,6 +17,7 @@ body{margin:0;background:transparent;color:var(--tx);font-family:system-ui,-appl
 .card .ph{aspect-ratio:4/3;background:var(--ph)}
 .card img{width:100%;height:100%;object-fit:cover;display:block}
 .card .t{padding:12px 14px}.card h3{margin:0 0 2px;font-size:16px}.card small{color:var(--mu)}
+.card .up{display:block;font-size:12px;margin-top:2px}
 button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 .back{background:none;border:0;color:var(--g);font:inherit;cursor:pointer;padding:0;margin-bottom:10px}
 h2{margin:0 0 2px}.meta{color:var(--mu);margin:0 0 14px;font-size:14px}
@@ -66,6 +67,8 @@ var S = { albums: [], tahun: "Semua", album: null, foto: [], idx: 0 };
 function $(id) { return document.getElementById(id); }
 function th(id, w) { return "https://drive.google.com/thumbnail?id=" + id + "&sz=w" + w; }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+var BLN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+function bt(iso) { var t = new Date(iso); return BLN[t.getMonth()] + " " + t.getFullYear(); }
 function api(q) {
   return fetch(API + "?" + q).then(function (r) { return r.json(); }).then(function (d) {
     if (d.error) throw new Error(d.error);
@@ -85,7 +88,8 @@ function grid() {
   S.albums.forEach(function (a, i) {
     if (S.tahun !== "Semua" && a.tahun !== S.tahun) return;
     h += '<button class="card" data-i="' + i + '"><div class="ph"><img loading="lazy" src="' + th(a.sampul, 600) + '" alt=""></div>' +
-      '<div class="t"><h3>' + esc(a.judul) + "</h3><small>" + esc(a.tampil) + ", " + a.jumlah + " foto</small></div></button>";
+      '<div class="t"><h3>' + esc(a.judul) + "</h3><small>" + esc(a.tampil) + ", " + a.jumlah + " foto</small>" +
+      (a.diperbarui ? '<small class="up">Diperbarui ' + bt(a.diperbarui) + "</small>" : "") + "</div></button>";
   });
   $("grid").innerHTML = h;
 }
@@ -100,7 +104,7 @@ $("grid").onclick = function (e) {
   var a = S.albums[b.getAttribute("data-i")];
   S.album = a;
   $("dt").textContent = a.judul;
-  $("dm").textContent = a.tampil + ", " + a.jumlah + " foto";
+  $("dm").textContent = a.tampil + ", " + a.jumlah + " foto" + (a.diperbarui ? ". Diperbarui " + bt(a.diperbarui) : "");
   $("photos").innerHTML = "";
   $("viewer").hidden = true;
   $("dmsg").hidden = false; $("dmsg").textContent = "Memuat foto...";
@@ -153,9 +157,7 @@ function baca(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e)
 function tampilAlbum(d) {
   S.albums = d.albums;
   if (d.diperbarui) {
-    var t = new Date(d.diperbarui);
-    var bl = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-    $("upd").textContent = "Diperbarui per " + bl[t.getMonth()] + " " + t.getFullYear();
+    $("upd").textContent = "Diperbarui per " + bt(d.diperbarui);
     $("upd").hidden = false;
   }
   $("msg").hidden = d.albums.length > 0;
