@@ -106,6 +106,7 @@ $("grid").onclick = function (e) {
   $("dt").textContent = a.judul;
   $("dm").textContent = a.tampil + ", " + a.jumlah + " foto" + (a.diperbarui ? ". Diperbarui " + bt(a.diperbarui) : "");
   $("photos").innerHTML = "";
+  $("photos").hidden = false;
   $("viewer").hidden = true;
   $("dmsg").hidden = false; $("dmsg").textContent = "Memuat foto...";
   $("daftar").hidden = true; $("detail").hidden = false;
