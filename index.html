@@ -37,7 +37,6 @@ h2{margin:0 0 2px}.meta{color:var(--mu);margin:0 0 14px;font-size:14px}
 </head>
 <body>
 <div id="app">
-  <p class="upd" id="upd" hidden></p>
   <div id="daftar">
     <div class="pills" id="pills"></div>
     <div class="grid" id="grid"></div>
@@ -157,10 +156,6 @@ function simpan(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catc
 function baca(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
 function tampilAlbum(d) {
   S.albums = d.albums;
-  if (d.diperbarui) {
-    $("upd").textContent = "Diperbarui per " + bt(d.diperbarui);
-    $("upd").hidden = false;
-  }
   $("msg").hidden = d.albums.length > 0;
   if (!d.albums.length) $("msg").textContent = "Belum ada album.";
   pills(); grid();
